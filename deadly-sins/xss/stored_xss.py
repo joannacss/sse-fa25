@@ -3,7 +3,7 @@
 # (The --debug will allow auto reload)
 from flask import Flask, request, jsonify, render_template, redirect
 from flask_sqlalchemy import SQLAlchemy
-
+from html import escape
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///comments.db'
@@ -19,6 +19,7 @@ class Comment(db.Model):
 @app.route('/add_comment', methods=['POST'])
 def add_comment():
     comment_data = request.form.get("comment")
+    comment_data = escape(comment_data)
     new_comment = Comment(text=comment_data)
     db.session.add(new_comment)
     db.session.commit()
