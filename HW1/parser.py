@@ -4,7 +4,7 @@ import gzip
 import tempfile
 
 # Obtain the JSON data
-url = "https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-2023.json.gz"#https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-recent.json.gz"
+url = "https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-2002.json.gz"
 response = requests.get(url)
 
 
@@ -18,16 +18,22 @@ with tempfile.TemporaryFile() as temp:
         data = json.loads(file_content)
 
         # Extract the relevant information
-        for entry in data['CVE_Items']:
-            cve_id = entry['cve']['CVE_data_meta']['ID']
-            cve_description = entry['cve']['description']['description_data'][0]['value']
-            if cve_id == "CVE-2023-24455":
-                print("CVE ID: ", cve_id)
-                print("Description: ", cve_description)
-                
-                for config in entry['configurations']['nodes']:
-                    print(config)
-                    for cpe in config["cpe_match"]:
-                        print("CPE", cpe)
+        for entry in data['vulnerabilities']:
+            cve = entry['cve']
+            cve_id = cve['id']
+            cve_description = "\n".join(x["value"] for x in cve['descriptions'] if x["lang"] == "en")
+            
+            print("CVE ID: ", cve_id)
+            print("Description: ", cve_description)
+            
+            if not "configurations" in cve: continue
+            
+            # Traverse each configuration entry to identify the list of CPEs
+            for config in cve['configurations']:
+                for config_nodes in config["nodes"]:
+                    for cpe_match in config_nodes["cpeMatch"]:
+                        print(cpe_match)
+
+            
     
             
