@@ -5,6 +5,6 @@
 int main(int argc, char *argv[]){
     int c = 123; 
     // how do I print the value of c to the console?
-    ...
+    // ...
     
 }
