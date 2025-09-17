@@ -11,6 +11,7 @@ def index(request):
         return redirect(reverse("blog:list_posts"))
     return redirect(reverse("blog:login"))
 
+
 # Create your views here.
 def register(request):
     if request.method == "POST":
@@ -24,17 +25,12 @@ def register(request):
     return render(request, "blog/register.html", {"form": form})
 
 
-
-
 def login(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
         if form.is_valid():
-            # Prevent session fixation
-            request.session.cycle_key()
-            # Store only a minimal identifier in session
-            request.session["user_id"] = form.user.pk
-            request.session["username"] = form.user.username
+            request.session.cycle_key()  # Prevent session fixation
+            request.session["user"] = form.user.username  # Store only a minimal identifier in session
             return redirect(reverse("blog:list_posts"))
     else:
         form = LoginForm()
@@ -53,6 +49,7 @@ def view_post(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     return render(request, 'blog/view.html', {'post': post})
 
+
 @require_POST
 def logout(request):
     # Wipe the session and rotate the session key
@@ -70,7 +67,8 @@ def create_post(request):
         if form.is_valid():
             post = form.save(commit=False)
             user = User.objects.filter(username=request.session["user"])[0]
-            post.creator = user
+            print(user)
+            post.user = user
             post.save()
             return redirect(reverse("blog:list_posts"))
     else:

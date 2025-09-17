@@ -1,0 +1,9 @@
+{% extends "blog/base.html" %}
+{% block body_content %}
+    <h1>Blog post creation</h1>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="w-100 btn btn-lg btn-primary" type="submit">Publish</button>
+    </form>
+{% endblock %}
