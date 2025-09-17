@@ -1,9 +1,6 @@
 from django import forms
-from .models import User
-
-from django import forms
-from django.contrib.auth.hashers import make_password
-from .models import User
+from django.contrib.auth.hashers import check_password, make_password
+from .models import User, Post
 
 
 class RegisterForm(forms.ModelForm):
@@ -47,3 +44,35 @@ class RegisterForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class LoginForm(forms.Form):
+    username = forms.CharField(max_length=200)
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    def clean(self):
+        cleaned = super().clean()
+        uname = cleaned.get("username")
+        pwd = cleaned.get("password")
+
+        if not uname or not pwd:
+            return cleaned  # field-level validators will flag empties
+
+        try:
+            user = User.objects.get(username=uname)
+        except User.DoesNotExist:
+            # Avoid leaking which field is wrong
+            raise forms.ValidationError("Invalid username or password.")
+
+        if not check_password(pwd, user.password):
+            raise forms.ValidationError("Invalid username or password.")
+
+        # stash the matched user for the view
+        self.user = user
+        return cleaned
+
+
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ("title", "content")

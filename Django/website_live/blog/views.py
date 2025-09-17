@@ -1,7 +1,10 @@
-from django.shortcuts import render
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from .forms import RegisterForm
+from django.views.decorators.http import require_POST
+
+from .forms import RegisterForm, LoginForm, PostForm
+from .models import Post, User
+
 
 def index(request):
     if request.session.get("user", None):
@@ -19,3 +22,58 @@ def register(request):
         form = RegisterForm()
 
     return render(request, "blog/register.html", {"form": form})
+
+
+
+
+def login(request):
+    if request.method == "POST":
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            # Prevent session fixation
+            request.session.cycle_key()
+            # Store only a minimal identifier in session
+            request.session["user_id"] = form.user.pk
+            request.session["username"] = form.user.username
+            return redirect(reverse("blog:list_posts"))
+    else:
+        form = LoginForm()
+
+    return render(request, "blog/login.html", {"form": form})
+
+
+def list_posts(request):
+    context = {
+        "posts": Post.objects.all()
+    }
+    return render(request, 'blog/list.html', context)
+
+
+def view_post(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    return render(request, 'blog/view.html', {'post': post})
+
+@require_POST
+def logout(request):
+    # Wipe the session and rotate the session key
+    request.session.flush()
+    return redirect(reverse("blog:login"))
+
+
+def create_post(request):
+    user = request.session.get("user", None)
+    if not user:
+        return redirect(f"{reverse('blog:login')}")
+
+    if request.method == "POST":
+        form = PostForm(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            user = User.objects.filter(username=request.session["user"])[0]
+            post.creator = user
+            post.save()
+            return redirect(reverse("blog:list_posts"))
+    else:
+        form = PostForm()
+
+    return render(request, "blog/create.html", {"form": form})
