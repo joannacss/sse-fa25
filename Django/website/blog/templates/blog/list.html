@@ -8,7 +8,7 @@
         {% for post in posts %}
             <li>
                 <a href="{% url 'blog:view_post' post.id %}">{{ post.title }}</a>
-                (written by: <i>{{post.creator.username}}</i>)
+                (written by: <i>{{post.user.username}}</i>)
             </li>
         {% endfor %}
     </ul>
