@@ -18,49 +18,52 @@ class RegisterForm(forms.ModelForm):
         model = User
         fields = ("username", "email")  # password handled separately
 
-    # Field-level validation (runs before clean())
+    # TODO: Field-level validation (runs before clean())
     def clean_username(self):
         username = (self.cleaned_data.get("username") or "").strip()
-        # Keep these in sync with your model constraints
         if len(username) < 4:
-            raise ValidationError("Username must be at least 4 characters long.")
+            raise ValidationError("Username has to be at least 4 characters long")
         if len(username) > 150:
-            raise ValidationError("Username cannot exceed 150 characters.")
-        # Only letters/digits/underscore:
+            raise ValidationError("Username cannot be longer than 150 characters")
         if not re.fullmatch(r"\w+", username):
-            raise ValidationError("Username can only contain letters, digits, and underscores.")
+            raise ValidationError("Username can only contain letters, numbers, and underscores")
         return username
 
     # Field-level validation (runs before clean())
     def clean_password1(self):
         password = self.cleaned_data.get("password1")
         if len(password) < 8:
-            raise ValidationError("Password must be at least 8 characters long.")
-        if not any(char.isdigit() for char in password):
-            raise ValidationError("Password must contain at least one digit.")
-        if not any(char.isupper() for char in password):
-            raise ValidationError("Password must contain at least one uppercase letter.")
-        if not any(char.islower() for char in password):
-            raise ValidationError("Password must contain at least one lowercase letter.")
-        if not any(char in "!@#$%^&*()_+-=[]{}|;:'\",.<>?/`~" for char in password):
-            raise ValidationError("Password must contain at least one special character.")
-        # TODO: check against common passwords list
+            raise ValidationError("Password must be at least 8 characters long")
+        if len(password) > 128:
+            raise ValidationError("Password cannot be longer than 128 characters")
+        if not any(c.isdigit() for c in password):
+            raise ValidationError("Password must contain at least one number")
+        if not any(c.isalpha() for c in password):
+            raise ValidationError("Password must contain at least one letter")
+        if not any(c.isupper() for c in password):
+            raise ValidationError("Password must contain at least one uppercase letter")
+        if not any(c.islower() for c in password):
+            raise ValidationError("Password must contain at least one lowercase letter")
+        if not any(c in "!@#$%&" for c in password):
+            raise ValidationError("Password must contain at least one special character (one of the following: !@#$%&")
         return password
 
     # Cross-field validation
     def clean(self):
         cleaned = super().clean()
-        p1 = cleaned.get("password1")
-        p2 = cleaned.get("password2")
+        # TODO: enforce password matches
+        p1 = self.cleaned_data.get("password1")
+        p2 = self.cleaned_data.get("password2")
         if p1 and p2 and p1 != p2:
-            self.add_error("password2", "Passwords do not match.")
+            raise ValidationError("Passwords do not match")
         return cleaned
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.password = make_password(self.cleaned_data["password1"])
-        if commit:
-            user.save()
+        # TODO: hash password and store it in user.password
+        hashed_password = make_password(self.cleaned_data["password1"])
+        user.password = hashed_password
+        user.save() # INSERT (...) INTO user
         return user
 
 
@@ -68,27 +71,7 @@ class LoginForm(forms.Form):
     username = forms.CharField(max_length=200)
     password = forms.CharField(widget=forms.PasswordInput)
 
-    def clean(self):
-        cleaned = super().clean()
-        uname = cleaned.get("username")
-        pwd = cleaned.get("password")
-
-        if not uname or not pwd:
-            return cleaned  # field-level validators will flag empties
-
-        try:
-            user = User.objects.get(username=uname)
-        except User.DoesNotExist:
-            # Avoid leaking which field is wrong
-            raise forms.ValidationError("Invalid username or password.")
-
-        if not check_password(pwd, user.password):
-            raise forms.ValidationError("Invalid username or password.")
-
-        # stash the matched user for the view
-        self.user = user
-        return cleaned
-
+    # TODO: validation
 
 class PostForm(forms.ModelForm):
     class Meta:
