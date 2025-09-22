@@ -31,6 +31,11 @@ class RegisterForm(forms.ModelForm):
 
     # Field-level validation (runs before clean())
     def clean_password1(self):
+        common = set()
+        with open("passwords.txt", "r") as f:
+            for line in f:
+                common.add(line.strip())
+
         password = self.cleaned_data.get("password1")
         if len(password) < 8:
             raise ValidationError("Password must be at least 8 characters long")
@@ -46,6 +51,8 @@ class RegisterForm(forms.ModelForm):
             raise ValidationError("Password must contain at least one lowercase letter")
         if not any(c in "!@#$%&" for c in password):
             raise ValidationError("Password must contain at least one special character (one of the following: !@#$%&")
+        if password in common:
+            raise ValidationError("Password is too common!")
         return password
 
     # Cross-field validation
@@ -72,6 +79,15 @@ class LoginForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput)
 
     # TODO: validation
+    def clean(self):
+        cleaned = super().clean()
+        username = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
+        user = User.objects.get(username=username)
+
+        if user and check_password(password, user.password):
+            return cleaned
+        raise ValidationError("Invalid username or password")
 
 class PostForm(forms.ModelForm):
     class Meta:
