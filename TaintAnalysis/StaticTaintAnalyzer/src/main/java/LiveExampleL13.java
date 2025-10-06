@@ -1,14 +1,19 @@
 import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.*;
+import com.ibm.wala.ipa.callgraph.cha.CHACallGraph;
 import com.ibm.wala.ipa.callgraph.impl.Util;
+import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
 import com.ibm.wala.ipa.callgraph.propagation.SSAPropagationCallGraphBuilder;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
+import com.ibm.wala.ipa.cha.IClassHierarchy;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSACFG;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.util.config.FileOfClasses;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.util.Collection;
 import java.util.jar.JarFile;
@@ -25,7 +30,16 @@ public class LiveExampleL13 {
         System.out.println("================ " + callgraphName + " call graph ===================");
         System.out.println(CallGraphStats.getStats(cg));
         System.out.println("Call Graph (application scope only): ");
-        // TODO
+        for (CGNode n : cg) {
+
+            if (n.getMethod().getDeclaringClass().getClassLoader().getReference().equals(ClassLoaderReference.Application)) {
+                cg.getSuccNodes(n).forEachRemaining(next -> {
+                    System.out.print("\"" + n.getMethod().getSignature() + "\"");
+                    System.out.println(" -> \"" + next.getMethod().getSignature() + "\"");
+                });
+                System.out.println("");
+            }
+        }
         System.out.println("===================================================");
     }
 
@@ -33,33 +47,52 @@ public class LiveExampleL13 {
     public static void main(String[] args) throws Exception {
         // TODO: create the analysis scope to analyze the Example1.jar
         AnalysisScope scope = AnalysisScope.createJavaAnalysisScope();
-        String appPath = LiveExampleL13.class.getResource("Example1.jar").getPath();
-        scope.addToScope(ClassLoaderReference.Application, new JarFile(appPath));
-        String primordialPath = LiveExampleL13.class.getResource("jdk-17.0.1/rt.jar").getPath();
-        scope.addToScope(ClassLoaderReference.Primordial, new JarFile(primordialPath));
+        String path = LiveExampleL13.class.getResource("Example1.jar").getPath();
+        scope.addToScope(ClassLoaderReference.Application, new JarFile(new File(path)));
+        String rtPath = LiveExampleL13.class.getResource("jdk-17.0.1/rt.jar").getPath();
+        scope.addToScope(ClassLoaderReference.Primordial, new JarFile(new File(rtPath)));
+        // TODO: add exclusions file and show ch size
+        String exPath = LiveExampleL13.class.getResource("Java60RegressionExclusions.txt").getPath();
+        scope.setExclusions(new FileOfClasses(new FileInputStream(exPath)));
         System.out.println(scope);
 
 
-
         // TODO: create the class hierarchy
+        IClassHierarchy classHierarchy = ClassHierarchyFactory.make(scope);
 
         // TODO: print the number of classes in the class hierarchy
+        System.out.println(classHierarchy.getNumberOfClasses());
 
-
-        // TODO: add exclusions file and show ch size
 
         // TODO: iterate over the class hierarchy and print the classes in the application scope
         // print their methods
+        for (IClass c : classHierarchy) {
+            if (c.getClassLoader().getReference().equals(ClassLoaderReference.Application)) {
+                System.out.println(c.getName());
+                Collection<? extends IMethod> declaredMethods = c.getDeclaredMethods();
+            }
+        }
+
 
         // TODO: compute entrypoint methods
+        Iterable<Entrypoint> entrypoints = Util.makeMainEntrypoints(scope, classHierarchy);
 
 
         // TODO: create the CHA call graph
+        CHACallGraph chaCallGraph = new CHACallGraph(classHierarchy, true);
+        chaCallGraph.init(entrypoints);
+//        printCallGraph(chaCallGraph, "CHA Call Graph");
 
 
         // TODO: create the RTA call graph
+        AnalysisOptions options = new AnalysisOptions();
+        options.setAnalysisScope(scope);
+        options.setEntrypoints(entrypoints);
+        AnalysisCache cache = new AnalysisCacheImpl();
 
-
+        CallGraphBuilder<InstanceKey> rtaBuilder = Util.makeRTABuilder(options, cache, classHierarchy, scope);
+        CallGraph rtaCg = rtaBuilder.makeCallGraph(options, null);
+        printCallGraph(rtaCg, "RTA Call Graph");
         // TODO: create the 1-CFA call graph
 
 
