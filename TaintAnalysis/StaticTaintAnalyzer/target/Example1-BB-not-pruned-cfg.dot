@@ -1,0 +1,24 @@
+digraph G {
+graph[label="Example1-BB-not-pruned-cfg.dot"];
+node[style=filled,fillcolor ="white",shape=box,margin=0.02,width=0,height=0];
+BB0 -> BB1
+BB1 -> BB2
+BB1 -> BB12
+BB2 -> BB3
+BB2 -> BB12
+BB3 -> BB7
+BB3 -> BB4
+BB4 -> BB5
+BB4 -> BB12
+BB5 -> BB6
+BB5 -> BB12
+BB6 -> BB10
+BB7 -> BB8
+BB7 -> BB12
+BB8 -> BB9
+BB8 -> BB12
+BB9 -> BB10
+BB10 -> BB11
+BB10 -> BB12
+BB11 -> BB12
+}
