@@ -57,30 +57,22 @@ public class LiveExampleL14 {
 
 
         // TODO: Compute the SDG of the program (data only)
-        SDG sdg = new SDG(callGraph, builder.getPointerAnalysis(),
-                Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS,
-                Slicer.ControlDependenceOptions.NONE
-                );
+
 
         // TODO: find sources and sinks
-        Set<Statement> sources = findSources(sdg);
-        Set<Statement> sinks = findSinks(sdg);
+
 
 
         // TODO: slice the SDG and compute a pruned SDG
-        Collection<Statement> statements = Slicer.computeBackwardSlice(
-                sdg, sinks
-        );
+
 
 
         // TODO: find vulnerable paths
-        Set vulnerablePaths = getVulnerablePaths(sdg, sources, sinks);
+
 
 
         // TODO: print vulnerable paths
-        for (Object vulnerablePath : vulnerablePaths) {
-            System.out.println(vulnerablePath);
-        }
+
 
     }
 
