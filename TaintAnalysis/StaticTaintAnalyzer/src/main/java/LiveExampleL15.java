@@ -1,4 +1,6 @@
+import com.ibm.wala.cast.tree.impl.CAstNodeTypeMapRecorder;
 import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.ipa.callgraph.*;
 import com.ibm.wala.ipa.callgraph.impl.Util;
 import com.ibm.wala.ipa.callgraph.propagation.InstanceKey;
@@ -28,7 +30,9 @@ import static com.ibm.wala.types.TypeReference.findOrCreate;
 /**
  * Example coded in class - Lecture 15.
  * Walked through WALA's PDG, SDG data structures and how to compute slices.
- *
+ * Running it from terminal:
+ * - mvn compile
+ * - mvn exec:java -Dexec.mainClass=LiveExampleL15
  * @author Joanna C. S. Santos
  */
 public class LiveExampleL15 {
@@ -56,10 +60,16 @@ public class LiveExampleL15 {
 
 
         // TODO: Compute the SDG of the program (data only)
+        SDG sdg = new SDG(callGraph,
+                builder.getPointerAnalysis(),
+                Slicer.DataDependenceOptions.NO_BASE_NO_HEAP_NO_EXCEPTIONS,
+                Slicer.ControlDependenceOptions.NONE);
 
-
+        System.out.println(sdg.getNumberOfNodes());
         // TODO: find sources and sinks
-
+        Set<Statement> sources = findSources(sdg);
+        Set<Statement> sinks = findSinks(sdg);
+        System.out.println("SOURCES: " + sources);
 
 
         // TODO: slice the SDG and compute a pruned SDG
@@ -99,6 +109,20 @@ public class LiveExampleL15 {
         // - the array is the program's arguments, ie., `args` (v1)
         Set<Statement> result = new HashSet<>();
         // TODO: iterate over the statements in the SDG to find source(s)
+        for(Statement statement : sdg) {
+            if(isApplicationScope(statement.getNode().getMethod().getDeclaringClass())){
+                if(statement instanceof NormalStatement){ // Alternative: statement.getKind().equals(Statement.Kind.NORMAL
+                    SSAInstruction instruction = ((NormalStatement) statement).getInstruction();
+                    if(instruction instanceof SSAArrayLoadInstruction){
+                        int varNo = instruction.getUse(0);
+                        IMethod m = statement.getNode().getMethod();
+                        if(m.getSelector().toString().equals("main([Ljava/lang/String;)V") && varNo == 1){
+                            result.add(statement);
+                        }
+                    }
+                }
+            }
+        }
 
 
         return result;

@@ -13,7 +13,8 @@ import com.ibm.wala.util.config.FileOfClasses;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.jar.JarFile;
-
+// mvn compile
+// mvn exec:java -Dexec.mainClass=Activity6
 public class Activity6 {
     public static void main(String[] args) throws IOException, ClassHierarchyException, CallGraphBuilderCancelException {
 
