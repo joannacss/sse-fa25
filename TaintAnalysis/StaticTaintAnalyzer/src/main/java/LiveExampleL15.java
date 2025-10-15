@@ -15,11 +15,14 @@ import com.ibm.wala.util.CancelException;
 import com.ibm.wala.util.collections.HashSetFactory;
 import com.ibm.wala.util.config.FileOfClasses;
 import com.ibm.wala.util.graph.Graph;
+import com.ibm.wala.util.graph.GraphSlicer;
 import com.ibm.wala.util.graph.traverse.BFSPathFinder;
 import com.ibm.wala.util.strings.Atom;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.sql.SQLOutput;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -70,15 +73,22 @@ public class LiveExampleL15 {
         Set<Statement> sources = findSources(sdg);
         Set<Statement> sinks = findSinks(sdg);
         System.out.println("SOURCES: " + sources);
+        System.out.println("SINKS: " + sinks);
 
 
         // TODO: slice the SDG and compute a pruned SDG
-
-
+        Collection<Statement> statements = Slicer.computeBackwardSlice(sdg, sinks);
+        Graph slicedSdg = GraphSlicer.prune(sdg, s -> statements.contains(s));
+        System.out.println(slicedSdg.getNumberOfNodes());
 
         // TODO: find vulnerable paths
-
-
+        Set<List<Statement>> paths = getVulnerablePaths(sdg, sources, sinks);
+        for(List<Statement> path : paths) {
+            System.out.println("PATH: " );
+            for(Statement s : path) {
+                System.out.println("\t"+s);
+            }
+        }
 
         // TODO: print vulnerable paths
 
@@ -148,6 +158,17 @@ public class LiveExampleL15 {
             // - it is within the application scope
             // - it is an invocation (SSAAbstractInvokeInstruction)
             // - the declared target method is equals to `sinkReference` constructed above
+            if(isApplicationScope(s.getNode().getMethod().getDeclaringClass())){
+                if(s instanceof NormalStatement){
+                    SSAInstruction instruction = ((NormalStatement) s).getInstruction();
+                    if(instruction instanceof SSAAbstractInvokeInstruction){
+                        SSAAbstractInvokeInstruction abstractInvoke = (SSAAbstractInvokeInstruction) instruction;
+                        if(abstractInvoke.getDeclaredTarget().equals(sinkReference)){
+                            result.add(s);
+                        }
+                    }
+                }
+            }
         }
         return result;
     }
@@ -160,18 +181,15 @@ public class LiveExampleL15 {
      * @param sinks   sink statements
      * @return set of vulnerable paths
      */
-    public static Set<List<Statement>> getVulnerablePaths(Graph<Statement> G, Set<Statement> sources, Set<Statement> sinks) {
+    public static Set<List<Statement>> getVulnerablePaths(Graph<Statement> g, Set<Statement> sources, Set<Statement> sinks) {
         Set<List<Statement>> result = HashSetFactory.make();
-        for (Statement src : G) {
-            if (sources.contains(src)) {
-                for (Statement dst : G) {
-                    if (sinks.contains(dst)) {
-                        BFSPathFinder<Statement> paths = new BFSPathFinder<>(G, src, dst);
-                        List<Statement> path = paths.find();
-                        if (path != null) {
-                            result.add(path);
-                        }
-                    }
+        for (Statement src : sources) {
+            for(Statement dst : sinks ) {
+                BFSPathFinder<Statement> finder = new BFSPathFinder<>(g, src, dst);
+                List<Statement> path = finder.find();
+                while(path != null){
+                    result.add(path);
+                    path = finder.find();
                 }
             }
         }
