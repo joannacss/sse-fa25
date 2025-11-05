@@ -35,6 +35,7 @@ def main():
 	sys.settrace(analyze)
 	# generate inputs: hint: use the random module
 	# generate input iteratively, until all of triangle's code lines are executed
+	# E-mail subject: Lecture 16 - Extra Credit (2PM)
 	triangle(2, 2, 1)
 	sys.settrace(None)
 	print("DONE")
