@@ -1,3 +1,10 @@
+"""
+Simple script to redner the AST using Dot format.
+Prior to executing this script, make sure to install the following:
+brew install graphviz
+brew install dot
+pip install graphviz
+"""
 import inspect
 import ast
 from examples.twice import test
@@ -24,7 +31,7 @@ def visualize_ast(tree):
 
 	# Render the Digraph as a PNG file
 	dot.format = 'png'
-	dot.render('test', view=True)
+	dot.render('test.dot', view=True)
 
 
 def main():
