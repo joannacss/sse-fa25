@@ -32,8 +32,12 @@ def collect_conditions(tree):
 	traverse(tree, [])
 
     # TODO: replace with Z3 syntax
+	constraints = []
+	for i in range(len(paths)):
+		path = ",".join(paths[i])
+		constraints.append(f"z3.And({path})")
 
-	return paths
+	return constraints
 
 
 
@@ -47,6 +51,19 @@ def main():
 	for i in range(len(paths)):
 		print(f"Path {i + 1}", paths[i])
 		# TODO: use z3 solver to find inputs that satisfy the path condition
+		x = z3.Int('x')
+		y = z3.Int('y')
+		z = z3.Int('z')
+
+
+		solver = z3.Solver()
+		solver.add(z3.And(eval(paths[i]), z == 2*y))#eval(paths[i]))
+
+		if solver.check() == z3.sat:
+			print(f"Solution: {solver.model()}")
+		else:
+			print(f"UNSAT")
+
 
 
 

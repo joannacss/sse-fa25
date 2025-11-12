@@ -18,57 +18,63 @@ class TaintAnalyzer:
         self.inputs = []
         self.vulnerable_paths = []
 
+
+
     def mark_as_tainted(self, var):
         # TODO: mark a specific variable as tainted
         self.tainted_variables.add(id(var))
 
 
+
+
     def generate_inputs(self):
         # TODO: generates inputs (hardcoded)
-        input1 = "ls ."
-        input2 = "echo 'Hello world'"
-
+        input1 = "ls"
+        input2 = "echo 'This is vulnerable'"
+        self.inputs.append(input1)
+        self.inputs.append(input2)
         # TODO: mark generated inputs as tainted
         self.mark_as_tainted(input1)
         self.mark_as_tainted(input2)
-        return [input1, input2]
 
 
 
     def check_taint(self, frame, event, arg, code_line):
         # TODO: checks whether a tainted variable reached a sink!
-        print("EVENT? ", event)
-        if event == "line":
+        if event == "return":
             m = SINK_REGEX.match(code_line)
-
             if m:
                 var_name = m.group(1)
                 var_id = id(frame.f_locals[var_name])
                 if var_id in self.tainted_variables:
                     self.vulnerable_paths.append(self.current_path)
+
     def run(self):
         def tracer(frame, event, arg):
             # TODO: implement the tracer function
             function_code = frame.f_code
             function_name = function_code.co_name
             lineno = frame.f_lineno
-            executed_line = linecache.getline(function_code.co_filename, lineno).rstrip()
-            variable_values = ", ".join([f"{name}={frame.f_locals[name]}" for name in frame.f_locals])
-            self.current_path.append(f"{function_name}:{lineno} {executed_line} ({variable_values})")
-            print(self.current_path[-1])
-            self.check_taint(frame, event, arg, executed_line)
+            executed_line = linecache.getline(function_code.co_filename, lineno)
+            executed_line = executed_line.rstrip()
+            self.current_path.append(executed_line)
+            print(executed_line)
+            self.check_taint(frame, event, arg,executed_line)
             return tracer
 
+
         # TODO: generate inputs
-        self.inputs = self.generate_inputs()
-        for tainted_input in self.inputs:
+        self.generate_inputs()
+        for input in self.inputs:
             self.current_path = []
             sys.settrace(tracer)
-            execute_cmd(tainted_input)
+            execute_cmd(input)
             sys.settrace(None)
+
 
         # TODO: return the vulnerable paths
         return self.vulnerable_paths
+
 
 
 
