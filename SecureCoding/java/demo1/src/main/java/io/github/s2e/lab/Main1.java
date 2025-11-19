@@ -33,10 +33,10 @@ public class Main1 {
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        Note note1 = new Note("Hello", "Lorem Ipsum");
-        save("my_note.txt", note1);
+//        Note note1 = new Note("Hello", "Lorem Ipsum");
+//        save("my_note.txt", note1);
         Note note2 =  (Note) load("my_note.txt");
-        System.out.println("Original object " + note1);
+//        System.out.println("Original object " + note1);
         System.out.println("Loaded object " + note2);
     }
 }
